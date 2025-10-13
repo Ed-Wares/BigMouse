@@ -3,6 +3,12 @@ Creates a very large Windows Mouse Pointer that can be seen from very far away.
 
 Internally the program create a global windows keyboard and mouse hooks to retreive keyboard and mouse information.  This is done using the knmhooker dll, which is built as a resource within the executable and can be extracted at runtime.
 
+### Demo
+
+Here is a quick look at the application:
+
+![Demo](https://github.com/Ed-Wares/BigMouse/blob/main/DemoBigMouse.gif?raw=true)
+
 ## Usage
 To start run BigMouse.exe
 

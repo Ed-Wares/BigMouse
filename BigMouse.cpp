@@ -353,7 +353,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	switch (message)
 	{
-	case WM_COMMAND:
+	case WM_COMMAND: // menu selections
 		wmId = LOWORD(wParam);
 		wmEvent = HIWORD(wParam);
 		// Parse the menu selections:
@@ -373,14 +373,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 	}
 	break;
-	case WM_COPYDATA:
+	case WM_COPYDATA: // Data received from the hook DLL
 		return (OnCopyHookData((COPYDATASTRUCT *)lParam));
-		break;
+	break;
 	case WM_PAINT:
-	{
+	{	// Paint the window with white fill and black border
 		hdc = BeginPaint(hWnd, &ps);
-		//HRGN rg = CreateWindowRegion(hWnd, 1, 8);
-		// GetWindowRgn(hWnd, rg);
 		FillRgn(hdc, winRegion, whiteBrsh); // Fill the region
 		FrameRgn(hdc, borderRegion, blackBrsh, REGION_BORDER_THICKNESS, REGION_BORDER_THICKNESS);// Draw a black border around the region
 		EndPaint(hWnd, &ps);
