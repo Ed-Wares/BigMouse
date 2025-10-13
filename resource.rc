@@ -1,7 +1,7 @@
 #include "resource.h"
 
 // RESOURCE_NAME  RESOURCE_TYPE  "path/to/file"
-KNMHOOKER_FILE         DLL            "kbhooker.dll"
+KNMHOOKER_FILE         DLL            "knmhooker.dll"
 //IDR_KNMHOOKER           BINARY  MOVEABLE PURE   "knmhooker.dll"
 
 // GLOBAL STRINGTABLE

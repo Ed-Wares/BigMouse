@@ -2,8 +2,6 @@
 // This DLL sets low-level keyboard and mouse hooks and communicates events to a controlling application via WM_COPYDATA.
 
 #include "knmhooker.h"// Include our smart header
-
-#include "stdafx.h"
 #include <windows.h>
 #include <stdlib.h>
 #include <Psapi.h>

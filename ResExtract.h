@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 
+// Function to extract a binary resource (like a DLL) from the executable and save it to disk.
 void ExtractResource(const WORD nID, LPCTSTR szFilename)
 {
 	const HINSTANCE hInstance = GetModuleHandle(NULL);
@@ -33,7 +34,8 @@ void ExtractResource(const WORD nID, LPCTSTR szFilename)
 	CloseHandle(hFile);
 	
 }
-//FindResourceA (HMODULE hModule, LPCSTR lpName, LPCSTR lpType);
+
+// Function to extract a binary resource (like a DLL) from the executable and save it to disk.
 bool ExtractResourceRc(LPCSTR ResourceId, LPCSTR ResourceType, const char* dllPath) {
 
 	std::ifstream f(dllPath);

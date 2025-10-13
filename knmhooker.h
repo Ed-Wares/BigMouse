@@ -1,8 +1,8 @@
 // knmhooker.h : header file
 // Defines the exported functions for the DLL application.
 
-#ifndef KNMHOOKER_FILE // to avoid multiple inclusion
-#define KNMHOOKER_FILE
+#ifndef KNMHOOKER_DLL // to avoid multiple inclusion
+#define KNMHOOKER_DLL "knmhooker.dll"
 
 #include <windows.h>
 

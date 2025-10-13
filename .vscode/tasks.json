@@ -9,7 +9,7 @@
                 "-g", // Include debug symbols
                 "-shared",
                 "-o",
-                "kbhooker.dll",
+                "knmhooker.dll",
                 "knmhooker.cpp",
                 "-DBUILDING_DLL"
             ],
@@ -47,7 +47,7 @@
                 "-lgdi32", // Link against gdi32 library
                 "-mwindows", // Use Windows subsystem
                 "-L${workspaceFolder}", // Look for libraries in the current folder
-                "-lkbhooker" // Link against the kbhooker library
+                "-lknmhooker" // Link against the kbhooker library
             ],
             "group": "build",
             "problemMatcher": [
@@ -60,7 +60,7 @@
             "type": "shell",
             "command": "rm",
             "args": [
-                "kbhooker.dll", 
+                "knmhooker.dll", 
             ],
             "group": "build",
             "problemMatcher": [
@@ -73,7 +73,7 @@
                 "Build DLL",
                 "Build Resources",
                 "Build EXE",
-                "Remove Dll"
+                //"Remove Dll"
             ],
             "dependsOrder": "sequence", // Ensure DLL is built before EXE
             "group": {
