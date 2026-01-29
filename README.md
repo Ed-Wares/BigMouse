@@ -1,7 +1,7 @@
 # BigMouse
 Creates a very large Windows Mouse Pointer that can be seen from very far away.
 
-Internally the program create a global windows keyboard and mouse hooks to retreive keyboard and mouse information.  This is done using the knmhooker dll, which is built as a resource within the executable and can be extracted at runtime.
+Internally the program create a global windows keyboard and mouse hooks to retreive keyboard and mouse information.  This is done using the knmhooker dll.  The dll is built as a resource within the executable and is extracted at runtime.
 
 ### Demo
 
@@ -24,7 +24,7 @@ BigMouse.exe -debug
 
 ## Building
 
-Build your own BigMouse binaries.
+Build your own application binaries.
 
 Prerequesites required for building source
 -  msys2 - download the latest installer from the [MSYS2](https://github.com/msys2/msys2-installer/releases/download/2024-12-08/msys2-x86_64-20241208.exe)

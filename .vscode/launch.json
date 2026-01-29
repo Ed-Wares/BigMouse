@@ -20,7 +20,7 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "Build All" // <-- This is the crucial link to tasks.json
+            "preLaunchTask": "Build All" // <-- This is the link to tasks.json
         }
     ]
 }

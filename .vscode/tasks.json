@@ -10,21 +10,21 @@
                 "-shared",
                 "-o",
                 "knmhooker.dll",
-                "knmhooker.cpp",
+                "src\\knmhooker.cpp",
                 "-DBUILDING_DLL"
             ],
             "group": "build",
             "problemMatcher": [
                 "$gcc"
             ],
-            "detail": "Compiles the hellodll.dll shared library."
+            "detail": "Compiles the knmhooker.dll shared library."
         },
         {
             "label": "Build Resources",
             "type": "shell",
             "command": "windres",
             "args": [
-                "resource.rc", // Include debug symbols
+                "src\\resource.rc", // Include debug symbols
                 "-o",
                 "resource.o",
             ],
@@ -42,12 +42,12 @@
                 "-g", // Include debug symbols
                 "-o",
                 "BigMouse.exe",
-                "BigMouse.cpp",
+                "src\\BigMouse.cpp",
                 "resource.o",
                 "-lgdi32", // Link against gdi32 library
                 "-mwindows", // Use Windows subsystem
                 "-L${workspaceFolder}", // Look for libraries in the current folder
-                "-lknmhooker" // Link against the kbhooker library
+                "-lknmhooker" // Link against the knmhooker library
             ],
             "group": "build",
             "problemMatcher": [

@@ -5,6 +5,7 @@
 #include <windows.h>
 #include <iostream>
 #include <fstream>
+#include <tchar.h>
 
 // Function to extract a binary resource (like a DLL) from the executable and save it to disk.
 void ExtractResource(const WORD nID, LPCTSTR szFilename)
