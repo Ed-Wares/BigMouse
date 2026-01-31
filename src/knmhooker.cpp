@@ -88,6 +88,31 @@ LRESULT CALLBACK KeyboardHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 		return(bRes);  // Don't tell the other hooks about this message.
 }
 
+LRESULT CALLBACK MouseHookProc(int nCode, WPARAM wParam, LPARAM lParam)
+{   
+	COPYDATASTRUCT  CDS;
+	HEVENT          Event;
+
+	CDS.dwData = 0;
+	CDS.cbData = sizeof(Event);
+	CDS.lpData = &Event;
+
+	Event.lParam      = lParam;
+	Event.wParam      = wParam;
+	Event.nCode       = nCode;
+	Event.dwHookType  = WH_MOUSE;
+	BOOL bRes;
+	LRESULT lRes = SendMessage(pDataMouse->g_hWnd, WM_COPYDATA, 0, (LPARAM)(VOID*)&CDS); // ask the controlling program if the hook should be passed
+    bRes = (BOOL)lRes;
+	if(!bRes)
+		return CallNextHookEx(pDataMouse->g_hHook, nCode, wParam, lParam);  // pass hook to next handler
+	else
+		return(bRes);  // Don't tell the other hooks about this message.
+}
+
+// This is the core logic that makes the header versatile for both building and using the DLL.
+//#define BUILDING_DLL // Define this when testing compilation of the DLL itself
+#ifdef BUILDING_DLL
 BOOL SetKeyboardHook(HWND hWnd)
 {
 	if(bStartingProcessKeyboard) // if we're just starting the DLL for the first time,
@@ -109,28 +134,6 @@ BOOL RemoveKeyboardHook()
 		return UnhookWindowsHookEx(pDataKeyboard->g_hHook);
 	}
 	return(true);
-}
-
-LRESULT CALLBACK MouseHookProc(int nCode, WPARAM wParam, LPARAM lParam)
-{   
-	COPYDATASTRUCT  CDS;
-	HEVENT          Event;
-
-	CDS.dwData = 0;
-	CDS.cbData = sizeof(Event);
-	CDS.lpData = &Event;
-
-	Event.lParam      = lParam;
-	Event.wParam      = wParam;
-	Event.nCode       = nCode;
-	Event.dwHookType  = WH_MOUSE;
-	BOOL bRes;
-	LRESULT lRes = SendMessage(pDataMouse->g_hWnd, WM_COPYDATA, 0, (LPARAM)(VOID*)&CDS); // ask the controlling program if the hook should be passed
-    bRes = (BOOL)lRes;
-	if(!bRes)
-		return CallNextHookEx(pDataMouse->g_hHook, nCode, wParam, lParam);  // pass hook to next handler
-	else
-		return(bRes);  // Don't tell the other hooks about this message.
 }
 
 BOOL SetMouseHook(HWND hWnd)
@@ -156,3 +159,4 @@ BOOL RemoveMouseHook()
 	return(true);
 }
 
+#endif // BUILDING_DLL

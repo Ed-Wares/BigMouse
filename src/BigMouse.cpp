@@ -4,31 +4,11 @@
 #include "BigMouse.h"
 #include "knmhooker.h"
 #include "ResExtract.h"
-#include <WinUser.h>
-
-#define MAX_LOADSTRING 100
-#define MOUSEEVENTF_WHEEL 0x0800
-#define WM_MOUSEWHEEL 0x020A
-#define OCR_NORMAL 32512
-#define OCR_IBEAM 32513
-
-#define WIN_REGION_OFFSET_X 0
-#define WIN_REGION_OFFSET_Y 0
-#define REGION_BORDER_OFFSET_X 0
-#define REGION_BORDER_OFFSET_Y 0
-#define REGION_BORDER_MAGNIFY 0
-#define REGION_BORDER_THICKNESS 6
 
 // Global Variables:
 HINSTANCE hInst;					 // current instance
 TCHAR szTitle[MAX_LOADSTRING];		 // The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING]; // the main window class name
-
-// Forward declarations of functions included in this code module:
-ATOM MyRegisterClass(HINSTANCE hInstance);
-BOOL InitInstance(HINSTANCE, int);
-LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-LRESULT CALLBACK About(HWND, UINT, WPARAM, LPARAM);
 
 HWND mainWnd;
 HRGN oldRegion;
@@ -256,6 +236,7 @@ bool OnCopyHookData(COPYDATASTRUCT *pCopyDataStruct) // WM_COPYDATA lParam will 
 	else if (Event.dwHookType == WH_MOUSE) // mouse event
 	{
 		MSLLHOOKSTRUCT *pmh = (MSLLHOOKSTRUCT *)Event.lParam;
+		HWND sourceHwnd = WindowFromPoint(pmh->pt);
 		char tmp[50];
 		if (Event.wParam == WM_LBUTTONDOWN)
 		{
@@ -263,7 +244,7 @@ bool OnCopyHookData(COPYDATASTRUCT *pCopyDataStruct) // WM_COPYDATA lParam will 
 		}
 		else if (Event.wParam == WM_MOUSEMOVE)
 		{
-			std::cout << "Mouse Move: X=" << pmh->pt.x << ", Y=" << pmh->pt.y << std::endl;
+			std::cout << "Mouse Move: HWND=" << (uintptr_t)sourceHwnd << ", X=" << pmh->pt.x << ", Y=" << pmh->pt.y << std::endl;
 			SetWindowPos(mainWnd, HWND_TOPMOST, pmh->pt.x - 1, pmh->pt.y, 0, 0, SWP_NOSIZE);
 			// return wkvn->MouseMoveData(pmh->pt.x,pmh->pt.y);
 		}
@@ -303,8 +284,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
 
-	SetKeyboardHookFp(hWnd);
-	SetMouseHookFp(hWnd);
+	SetKeyboardHook(hWnd);
+	SetMouseHook(hWnd);
 
 	return TRUE;
 }
@@ -312,8 +293,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 // Clean up resources and remove hooks before exiting
 void Shutdown()
 {
-	RemoveMouseHookFp();
-	RemoveKeyboardHookFp();
+	RemoveMouseHook();
+	RemoveKeyboardHook();
 	SetSystemCursor(oldCursor, OCR_NORMAL); // restore mouse
 	DestroyCursor(newCursor);
 	if (winRegion)

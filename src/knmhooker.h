@@ -45,11 +45,30 @@ typedef struct
     typedef BOOL (*SetMouseHookFunc)(HWND hWnd);
     typedef BOOL (*RemoveMouseHookFunc)();
 
-    // Function pointers to hold the addresses of the DLL functions
-    SetKeyboardHookFunc SetKeyboardHookFp;
-    RemoveKeyboardHookFunc RemoveKeyboardHookFp;
-    SetMouseHookFunc SetMouseHookFp;
-    RemoveMouseHookFunc RemoveMouseHookFp;
+    // Inline functions that return static Function pointers to hold the addresses of the DLL functions
+    inline SetKeyboardHookFunc& GetSetKeyboardHookFunc()
+    {
+        static SetKeyboardHookFunc funcPtr = nullptr;
+        return funcPtr;
+    }
+
+    inline RemoveKeyboardHookFunc& GetRemoveKeyboardHookFunc()
+    {
+        static RemoveKeyboardHookFunc funcPtr = nullptr;
+        return funcPtr;
+    }
+
+    inline SetMouseHookFunc& GetSetMouseHookFunc()
+    {
+        static SetMouseHookFunc funcPtr = nullptr;
+        return funcPtr;
+    }
+
+    inline RemoveMouseHookFunc& GetRemoveMouseHookFunc()
+    {
+        static RemoveMouseHookFunc funcPtr = nullptr;
+        return funcPtr;
+    }
 
     // For Dynamic Running of this DLL we can define function to load each method.
     // This function loads the DLL and retrieves the function pointers.
@@ -58,14 +77,25 @@ typedef struct
     {
         if (!hDll) return FALSE;
 
-        SetKeyboardHookFp = (SetKeyboardHookFunc)GetProcAddress(hDll, "SetKeyboardHook");
-        RemoveKeyboardHookFp = (RemoveKeyboardHookFunc)GetProcAddress(hDll, "RemoveKeyboardHook");
-        SetMouseHookFp = (SetMouseHookFunc)GetProcAddress(hDll, "SetMouseHook");
-        RemoveMouseHookFp = (RemoveMouseHookFunc)GetProcAddress(hDll, "RemoveMouseHook");        
+        GetSetKeyboardHookFunc() = (SetKeyboardHookFunc)GetProcAddress(hDll, "SetKeyboardHook");
+        GetRemoveKeyboardHookFunc() = (RemoveKeyboardHookFunc)GetProcAddress(hDll, "RemoveKeyboardHook");
+        GetSetMouseHookFunc() = (SetMouseHookFunc)GetProcAddress(hDll, "SetMouseHook");
+        GetRemoveMouseHookFunc() = (RemoveMouseHookFunc)GetProcAddress(hDll, "RemoveMouseHook");        
 
         // Ensure all function pointers were loaded successfully
-        return (SetKeyboardHookFp && RemoveKeyboardHookFp && SetMouseHookFp && RemoveMouseHookFp);
+        return (GetSetKeyboardHookFunc() && GetRemoveKeyboardHookFunc() && GetSetMouseHookFunc() && GetRemoveMouseHookFunc());
     }
+
+    // Convenience macros to call the functions via the function pointers
+
+    // Set a keyboard hook and send keyboard events to the specified window handle
+    #define SetKeyboardHook GetSetKeyboardHookFunc()
+    // Remove a previously set keyboard hook
+    #define RemoveKeyboardHook GetRemoveKeyboardHookFunc()
+    // Set a mouse hook and send mouse events to the specified window handle
+    #define SetMouseHook GetSetMouseHookFunc()
+    // Remove a previously set mouse hook
+    #define RemoveMouseHook GetRemoveMouseHookFunc()
 
 #endif
 
