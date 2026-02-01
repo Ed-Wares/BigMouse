@@ -27,7 +27,7 @@ HBRUSH blackBrsh;
 // Function to redirect standard I/O to a new console window for debugging.
 void RedirectIOToConsole()
 {
-	// 1. Create a new console window
+	// Create a new console window
 	if (!AllocConsole())
 	{
 		// Handle error if console could not be created
@@ -35,22 +35,40 @@ void RedirectIOToConsole()
 		return;
 	}
 
-	// 2. Re-open standard I/O streams to the new console
+	// Re-open standard I/O streams to the new console
 	// This is the tricky part that makes std::cout and std::cin work.
 	FILE *fDummy;
 	freopen_s(&fDummy, "CONIN$", "r", stdin);
 	freopen_s(&fDummy, "CONOUT$", "w", stdout);
 	freopen_s(&fDummy, "CONOUT$", "w", stderr);
 
-	// 3. Clear the iostream state
+	// Clear the iostream state
 	std::cout.clear();
 	std::cin.clear();
 	std::cerr.clear();
 }
 
+// This function enables deep DPI awareness for the application.
+void EnableDeepDPIAwareness() {
+    // Try to load the modern Windows 10/11 function dynamically
+    typedef BOOL(WINAPI* SetDpiAwarenessContextProc)(DPI_AWARENESS_CONTEXT);
+    HMODULE hUser32 = LoadLibrary(TEXT("user32.dll"));
+    if (hUser32) {
+        SetDpiAwarenessContextProc setDpi = (SetDpiAwarenessContextProc)GetProcAddress(hUser32, "SetProcessDpiAwarenessContext");
+        if (setDpi) {
+            setDpi((DPI_AWARENESS_CONTEXT)-4); // DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = -4
+            FreeLibrary(hUser32);
+            return;
+        }
+        FreeLibrary(hUser32);
+    }
+    SetProcessDPIAware(); // Fallback for Windows 7/8
+}
+
 // The main entry point for the Windows application.
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
+    EnableDeepDPIAwareness(); // This stops the "Growing" window effect on the multiple monitors.
 	MSG msg;
 	HACCEL hAccelTable;
 
@@ -205,6 +223,7 @@ bool OnCopyHookData(COPYDATASTRUCT *pCopyDataStruct) // WM_COPYDATA lParam will 
 			else if (pkh->vkCode == VkKeyScan('=') && GetKeyState(VK_CONTROL) < 0) // CTRL+ '=' key is pressed magnify mouse cursor size
 			{
 				magnifyRegion += .2;
+				std::cout << "Magnify win region: " << magnifyRegion << std::endl;
 				// SetWindowRgn(hWnd,oldRegion,TRUE);
 				if (winRegion)
 				{
@@ -219,6 +238,7 @@ bool OnCopyHookData(COPYDATASTRUCT *pCopyDataStruct) // WM_COPYDATA lParam will 
 			else if (pkh->vkCode == VkKeyScan('-') && GetKeyState(VK_CONTROL) < 0) // CTRL + '-' key is pressed decrease mouse cursor size
 			{
 				magnifyRegion -= .2;
+				std::cout << "Magnify win region: " << magnifyRegion << std::endl;
 				// SetWindowRgn(hWnd,oldRegion,TRUE);
 				if (winRegion)
 				{
@@ -245,7 +265,7 @@ bool OnCopyHookData(COPYDATASTRUCT *pCopyDataStruct) // WM_COPYDATA lParam will 
 		else if (Event.wParam == WM_MOUSEMOVE)
 		{
 			std::cout << "Mouse Move: HWND=" << (uintptr_t)sourceHwnd << ", X=" << pmh->pt.x << ", Y=" << pmh->pt.y << std::endl;
-			SetWindowPos(mainWnd, HWND_TOPMOST, pmh->pt.x - 1, pmh->pt.y, 0, 0, SWP_NOSIZE);
+			SetWindowPos(mainWnd, HWND_TOPMOST, pmh->pt.x - 1, pmh->pt.y, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE);
 			// return wkvn->MouseMoveData(pmh->pt.x,pmh->pt.y);
 		}
 	}
@@ -256,20 +276,19 @@ bool OnCopyHookData(COPYDATASTRUCT *pCopyDataStruct) // WM_COPYDATA lParam will 
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
 	HWND hWnd;
-
 	hInst = hInstance;					// Store instance handle in our global variable
-	DWORD dwExStyle = WS_EX_TOOLWINDOW; // to hide from alt-tab
-	DWORD dwStyle = WS_POPUP; // | WS_BORDER | WS_DLGFRAME | WS_THICKFRAME;
+	HWND hDummy = NULL;
+	//hDummy = CreateWindowEx(0, TEXT("STATIC"),TEXT("HiddenParent"),WS_POPUP, 0, 0, 0, 0, NULL, NULL, hInstance, NULL);  
+	//DWORD dwExStyle = WS_EX_TOOLWINDOW; // to hide from alt-tab
+	DWORD dwExStyle = WS_EX_NOACTIVATE | WS_EX_TOPMOST | WS_EX_LAYERED | WS_EX_TRANSPARENT; 
+    DWORD dwStyle = WS_POPUP;
 	// Define the desired client area rectangle
 	RECT wr = {0, 0, 1500, 1500}; // Left, Top, Right, Bottom
 	// Adjust the rectangle to account for the window's frame and title bar
 	AdjustWindowRectEx(&wr, dwStyle, FALSE, dwExStyle);
-	// hWnd = CreateWindow(szWindowClass, szTitle, WS_DLGFRAME, 0, 0, 800, 900, NULL, NULL, hInstance, NULL);
-	hWnd = CreateWindowEx(dwExStyle, szWindowClass, szTitle, dwStyle, wr.left, wr.top, wr.right - wr.left, wr.bottom - wr.top, NULL, NULL, hInstance, NULL);
-	if (!hWnd)
-	{
-		return FALSE;
-	}
+	hWnd = CreateWindowEx(dwExStyle, szWindowClass, szTitle, dwStyle, wr.left, wr.top, wr.right - wr.left, wr.bottom - wr.top, hDummy, NULL, hInstance, NULL);
+	if (!hWnd) return FALSE;
+	SetLayeredWindowAttributes(hWnd, 0, 255, LWA_ALPHA); // Set window opacity to fully opaque (255)
 	oldRegion = CreateRectRgn(0, 0, 0, 0);
 	GetWindowRgn(hWnd, oldRegion);
 
@@ -293,10 +312,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 // Clean up resources and remove hooks before exiting
 void Shutdown()
 {
+	SystemParametersInfo(SPI_SETCURSORS, 0, NULL, 0); // Restore default cursors
 	RemoveMouseHook();
 	RemoveKeyboardHook();
-	SetSystemCursor(oldCursor, OCR_NORMAL); // restore mouse
-	DestroyCursor(newCursor);
 	if (winRegion)
 	{
 		DeleteObject(winRegion);
