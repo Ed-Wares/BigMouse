@@ -11,7 +11,9 @@
                 "-o",
                 "knmhooker.dll",
                 "src\\knmhooker.cpp",
-                "-DBUILDING_DLL"
+                "-DBUILDING_DLL", // Define macro for building DLL
+                "-static-libgcc", // Statically link libgcc
+                "-static-libstdc++"// Statically link libstdc++
             ],
             "group": "build",
             "problemMatcher": [
@@ -47,7 +49,9 @@
                 "-lgdi32", // Link against gdi32 library
                 "-mwindows", // Use Windows subsystem
                 "-L${workspaceFolder}", // Look for libraries in the current folder
-                "-lknmhooker" // Link against the knmhooker library
+                "-lknmhooker", // Link against the knmhooker library
+                "-static-libgcc", // Statically link libgcc
+                "-static-libstdc++" // Statically link libstdc++
             ],
             "group": "build",
             "problemMatcher": [
