@@ -56,6 +56,6 @@ jobs:
         name: build-binary-${{ inputs.version_string }}
         path: |
           ./distrib/*.zip
-          ./distrib/*/*.exe
+          ./distrib/BigMouse/*.exe
         retention-days: 1
 
