@@ -29,4 +29,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: "*" # Upload all files in the artifact
+          files: |
+            distrib/*.zip
+            distrib/*/*.exe
