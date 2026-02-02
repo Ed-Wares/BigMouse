@@ -7,8 +7,8 @@
 #include <Psapi.h>
 #include <stdio.h>
 
-#define WH_KEYBOARD_LL 13 // only works for NT-XP!
-#define WH_MOUSE_LL 14 // only works for NT-XP!
+#define WH_KEYBOARD_LL 13 // only works for NT-XP+!
+#define WH_MOUSE_LL 14 // only works for NT-XP+!
 
 
 HANDLE hMappedFileKeyboard;
@@ -24,6 +24,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserv
 	{
 		case DLL_PROCESS_ATTACH:      // the DLL is attached to a process. we have to set the MMF
 			{
+				DisableThreadLibraryCalls((HMODULE)hModule);
 				char szBaseName[_MAX_FNAME]="\0", szTmp[_MAX_FNAME];
 				char keyboardFN[_MAX_FNAME];
 				char mouseFN[_MAX_FNAME];
@@ -42,19 +43,17 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserv
 
 				if(bStartingProcessKeyboard)       // if the MMF doesn't exist, we have the first instance
 				{
-					pDataKeyboard->g_hInstance  = hModule;  // so set the instance handle
-					pDataKeyboard->g_hWnd       = NULL;     // and initialize the other handles
-					pDataKeyboard->g_hHook      = NULL;
+					pDataKeyboard->g_hInstance  = (unsigned __int64)hModule;  // so set the instance handle
+					pDataKeyboard->g_hWnd       = 0;     // and initialize the other handles
+					pDataKeyboard->g_hHook      = 0;
 				}
 
 				if(bStartingProcessMouse)       // if the MMF doesn't exist, we have the first instance
 				{
-					pDataMouse->g_hInstance  = hModule;  // so set the instance handle
-					pDataMouse->g_hWnd       = NULL;     // and initialize the other handles
-					pDataMouse->g_hHook      = NULL;
+					pDataMouse->g_hInstance  = (unsigned __int64)hModule;  // so set the instance handle
+					pDataMouse->g_hWnd       = 0;     // and initialize the other handles
+					pDataMouse->g_hHook      = 0;
 				}
-
-				DisableThreadLibraryCalls((HMODULE)hModule);
 			}
 		break;
 
@@ -68,6 +67,9 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserv
 
 LRESULT CALLBACK KeyboardHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 {   
+	// Always call next hook if nCode < 0
+    if (nCode < 0) return CallNextHookEx((HHOOK)pDataKeyboard->g_hHook, nCode, wParam, lParam);	
+	
 	COPYDATASTRUCT  CDS;
 	HEVENT          Event;
 
@@ -80,16 +82,18 @@ LRESULT CALLBACK KeyboardHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 	Event.nCode       = nCode;
 	Event.dwHookType  = WH_KEYBOARD;
 
-	BOOL bRes = SendMessage(pDataKeyboard->g_hWnd, WM_COPYDATA, 0, (LPARAM)(VOID*)&CDS); // ask the controlling program if the hook should be passed
-
-	if(!bRes)
-		return CallNextHookEx(pDataKeyboard->g_hHook, nCode, wParam, lParam);  // pass hook to next handler
-	else
-		return(bRes);  // Don't tell the other hooks about this message.
+	//BOOL bRes = SendMessage((HWND)pDataKeyboard->g_hWnd, WM_COPYDATA, 0, (LPARAM)(VOID*)&CDS); 
+	// Send safely using Timeout (Prevents source from freezing if target is unresponsive)
+	DWORD_PTR dwResult;
+	BOOL bRes = SendMessageTimeout((HWND)pDataKeyboard->g_hWnd, WM_COPYDATA, 0, (LPARAM)(VOID*)&CDS, SMTO_ABORTIFHUNG | SMTO_NORMAL, 100, &dwResult);
+	return CallNextHookEx((HHOOK)pDataKeyboard->g_hHook, nCode, wParam, lParam);  // pass hook to next handler
 }
 
 LRESULT CALLBACK MouseHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 {   
+	// Always call next hook if nCode < 0
+    if (nCode < 0) return CallNextHookEx((HHOOK)pDataKeyboard->g_hHook, nCode, wParam, lParam);	
+
 	COPYDATASTRUCT  CDS;
 	HEVENT          Event;
 
@@ -101,25 +105,22 @@ LRESULT CALLBACK MouseHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 	Event.wParam      = wParam;
 	Event.nCode       = nCode;
 	Event.dwHookType  = WH_MOUSE;
-	BOOL bRes;
-	LRESULT lRes = SendMessage(pDataMouse->g_hWnd, WM_COPYDATA, 0, (LPARAM)(VOID*)&CDS); // ask the controlling program if the hook should be passed
-    bRes = (BOOL)lRes;
-	if(!bRes)
-		return CallNextHookEx(pDataMouse->g_hHook, nCode, wParam, lParam);  // pass hook to next handler
-	else
-		return(bRes);  // Don't tell the other hooks about this message.
+	//LRESULT lRes = SendMessage((HWND)pDataMouse->g_hWnd, WM_COPYDATA, 0, (LPARAM)(VOID*)&CDS); // ask the controlling program if the hook should be passed
+	// Send safely using Timeout (Prevents source from freezing if target is unresponsive)
+	DWORD_PTR dwResult;
+	BOOL bRes = SendMessageTimeout((HWND)pDataMouse->g_hWnd, WM_COPYDATA, 0, (LPARAM)(VOID*)&CDS, SMTO_ABORTIFHUNG | SMTO_NORMAL, 100, &dwResult);
+	return CallNextHookEx((HHOOK)pDataMouse->g_hHook, nCode, wParam, lParam);  // pass hook to next handler
 }
 
 // This is the core logic that makes the header versatile for both building and using the DLL.
-//#define BUILDING_DLL // Define this when testing compilation of the DLL itself
 #ifdef BUILDING_DLL
 BOOL SetKeyboardHook(HWND hWnd)
 {
 	if(bStartingProcessKeyboard) // if we're just starting the DLL for the first time,
 	{
-		pDataKeyboard->g_hWnd   = hWnd; // remember the windows and hook handle for further instances
-		pDataKeyboard->g_hHook  = SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)KeyboardHookProc, (HINSTANCE)pDataKeyboard->g_hInstance, 0);   
-		return(pDataKeyboard->g_hHook != NULL);
+		pDataKeyboard->g_hWnd   = (unsigned __int64)hWnd; // remember the windows and hook handle for further instances
+		pDataKeyboard->g_hHook  = (unsigned __int64)SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)KeyboardHookProc, (HINSTANCE)pDataKeyboard->g_hInstance, 0);   
+		return(pDataKeyboard->g_hHook != 0);
 	}
 	else 
 		return(false);
@@ -129,9 +130,9 @@ BOOL RemoveKeyboardHook()
 {
 	if(pDataKeyboard->g_hHook)       // if the hook is defined
 	{
-		pDataKeyboard->g_hWnd = NULL;  // reset data
-		pDataKeyboard->g_hHook = NULL;
-		return UnhookWindowsHookEx(pDataKeyboard->g_hHook);
+		pDataKeyboard->g_hWnd = 0;  // reset data
+		pDataKeyboard->g_hHook = 0;
+		return UnhookWindowsHookEx((HHOOK)pDataKeyboard->g_hHook);
 	}
 	return(true);
 }
@@ -140,9 +141,9 @@ BOOL SetMouseHook(HWND hWnd)
 {
 	if(bStartingProcessMouse) // if we're just starting the DLL for the first time,
 	{
-		pDataMouse->g_hWnd   = hWnd; // remember the windows and hook handle for further instances
-		pDataMouse->g_hHook  = SetWindowsHookEx(WH_MOUSE_LL, (HOOKPROC)MouseHookProc, (HINSTANCE)pDataMouse->g_hInstance, 0);   
-		return(pDataMouse->g_hHook != NULL);
+		pDataMouse->g_hWnd   = (unsigned __int64)hWnd; // remember the windows and hook handle for further instances
+		pDataMouse->g_hHook  = (unsigned __int64)SetWindowsHookEx(WH_MOUSE_LL, (HOOKPROC)MouseHookProc, (HINSTANCE)pDataMouse->g_hInstance, 0);   
+		return(pDataMouse->g_hHook != 0);
 	}
 	else 
 		return(false);
@@ -152,9 +153,9 @@ BOOL RemoveMouseHook()
 {
 	if(pDataMouse->g_hHook)       // if the hook is defined
 	{
-		pDataMouse->g_hWnd = NULL;  // reset data
-		pDataMouse->g_hHook = NULL;
-		return UnhookWindowsHookEx(pDataMouse->g_hHook);
+		pDataMouse->g_hWnd = 0;  // reset data
+		pDataMouse->g_hHook = 0;
+		return UnhookWindowsHookEx((HHOOK)pDataMouse->g_hHook);
 	}
 	return(true);
 }

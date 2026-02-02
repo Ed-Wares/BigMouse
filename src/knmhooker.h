@@ -16,12 +16,14 @@ typedef struct
 
 typedef struct
 {
-	HHOOK g_hHook;
-	HWND g_hWnd;
-	HANDLE g_hInstance;
+    // Use 'unsigned __int64' to force 8-byte storage for handles, supporting both 32-bit and 64-bit processes
+	unsigned __int64 g_hHook; // HHOOK
+	unsigned __int64 g_hWnd; // HWND
+	unsigned __int64 g_hInstance; // HINSTANCE
 }GLOBALDATA;
 
 // This is the core logic that makes the header versatile for both building and using the DLL.
+// #define BUILDING_DLL // Define this when testing compilation of the DLL itself
 #ifdef BUILDING_DLL
 
     // If we are building the DLL, we want to export our functions.
@@ -34,7 +36,7 @@ typedef struct
         API_DECL BOOL RemoveMouseHook();
     }
 
-#else
+#else // BUILDING_DLL
 
     // If we are using the DLL, we want to import its functions.
     #define API_DECL __declspec(dllimport)
@@ -45,30 +47,14 @@ typedef struct
     typedef BOOL (*SetMouseHookFunc)(HWND hWnd);
     typedef BOOL (*RemoveMouseHookFunc)();
 
-    // Inline functions that return static Function pointers to hold the addresses of the DLL functions
-    inline SetKeyboardHookFunc& GetSetKeyboardHookFunc()
-    {
-        static SetKeyboardHookFunc funcPtr = nullptr;
-        return funcPtr;
-    }
-
-    inline RemoveKeyboardHookFunc& GetRemoveKeyboardHookFunc()
-    {
-        static RemoveKeyboardHookFunc funcPtr = nullptr;
-        return funcPtr;
-    }
-
-    inline SetMouseHookFunc& GetSetMouseHookFunc()
-    {
-        static SetMouseHookFunc funcPtr = nullptr;
-        return funcPtr;
-    }
-
-    inline RemoveMouseHookFunc& GetRemoveMouseHookFunc()
-    {
-        static RemoveMouseHookFunc funcPtr = nullptr;
-        return funcPtr;
-    }
+    // Set a keyboard hook and send keyboard events to the specified window handle
+    SetKeyboardHookFunc SetKeyboardHook;
+    // Remove a previously set keyboard hook
+    RemoveKeyboardHookFunc RemoveKeyboardHook;
+    // Set a mouse hook and send mouse events to the specified window handle
+    SetMouseHookFunc SetMouseHook;
+    // Remove a previously set mouse hook
+    RemoveMouseHookFunc RemoveMouseHook;
 
     // For Dynamic Running of this DLL we can define function to load each method.
     // This function loads the DLL and retrieves the function pointers.
@@ -77,27 +63,15 @@ typedef struct
     {
         if (!hDll) return FALSE;
 
-        GetSetKeyboardHookFunc() = (SetKeyboardHookFunc)GetProcAddress(hDll, "SetKeyboardHook");
-        GetRemoveKeyboardHookFunc() = (RemoveKeyboardHookFunc)GetProcAddress(hDll, "RemoveKeyboardHook");
-        GetSetMouseHookFunc() = (SetMouseHookFunc)GetProcAddress(hDll, "SetMouseHook");
-        GetRemoveMouseHookFunc() = (RemoveMouseHookFunc)GetProcAddress(hDll, "RemoveMouseHook");        
+        SetKeyboardHook = (SetKeyboardHookFunc)GetProcAddress(hDll, "SetKeyboardHook");
+        RemoveKeyboardHook = (RemoveKeyboardHookFunc)GetProcAddress(hDll, "RemoveKeyboardHook");
+        SetMouseHook = (SetMouseHookFunc)GetProcAddress(hDll, "SetMouseHook");
+        RemoveMouseHook = (RemoveMouseHookFunc)GetProcAddress(hDll, "RemoveMouseHook");        
 
         // Ensure all function pointers were loaded successfully
-        return (GetSetKeyboardHookFunc() && GetRemoveKeyboardHookFunc() && GetSetMouseHookFunc() && GetRemoveMouseHookFunc());
+        return (SetKeyboardHook && RemoveKeyboardHook && SetMouseHook && RemoveMouseHook);
     }
 
-    // Convenience macros to call the functions via the function pointers
+#endif // BUILDING_DLL
 
-    // Set a keyboard hook and send keyboard events to the specified window handle
-    #define SetKeyboardHook GetSetKeyboardHookFunc()
-    // Remove a previously set keyboard hook
-    #define RemoveKeyboardHook GetRemoveKeyboardHookFunc()
-    // Set a mouse hook and send mouse events to the specified window handle
-    #define SetMouseHook GetSetMouseHookFunc()
-    // Remove a previously set mouse hook
-    #define RemoveMouseHook GetRemoveMouseHookFunc()
-
-#endif
-
-
-#endif
+#endif // KNMHOOKER_DLL

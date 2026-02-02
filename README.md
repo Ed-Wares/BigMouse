@@ -16,6 +16,8 @@ To exit the BigMouse application you can press the CTRL+7 keys.
 
 To increase/decrease the size of the mouse cursor press CTRL and the - or + keys.
 
+To open the About dialog window press the keys CTRL + /?.
+
 Debugging can be enabled, which will add a command prompt that outputs debug messages that are being received from the global Keyboard and mouse hooks.
 To enable debugging run from a command prompt:
 ```

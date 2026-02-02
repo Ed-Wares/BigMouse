@@ -214,6 +214,11 @@ bool OnCopyHookData(COPYDATASTRUCT *pCopyDataStruct) // WM_COPYDATA lParam will 
 				std::cout << "shutdown called" << std::endl;
 				DestroyWindow(mainWnd);
 			}
+			if (pkh->vkCode == VkKeyScan('/') && GetKeyState(VK_CONTROL) < 0) // press Ctrl+/? to open about dialog
+			{
+				std::cout << "about called" << std::endl;
+				DialogBox(hInst, (LPCTSTR)IDD_ABOUTBOX, NULL, (DLGPROC)About);
+			}
 			else if (pkh->vkCode == VkKeyScan('0') && GetKeyState(VK_CONTROL) < 0) // press Ctrl+0 to bring to front
 			{
 				SetForegroundWindow(mainWnd);
@@ -352,6 +357,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	switch (message)
 	{
+	case WM_CREATE:
+        // Allow applications to send WM_COPYDATA to us
+        ChangeWindowMessageFilter(WM_COPYDATA, MSGFLT_ADD); 
+		break;
 	case WM_COMMAND: // menu selections
 		wmId = LOWORD(wParam);
 		wmEvent = HIWORD(wParam);
@@ -359,7 +368,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (wmId)
 		{
 		case IDM_ABOUT:
-			DialogBox(hInst, (LPCTSTR)IDD_ABOUTBOX, hWnd, (DLGPROC)About);
+			DialogBox(hInst, (LPCTSTR)IDD_ABOUTBOX, NULL, (DLGPROC)About);
 			break;
 		case IDM_EXIT:
 			DestroyWindow(hWnd);
